@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+*.log
+.env
+.env.local
+*.tsbuildinfo
+.packages/go/operator/bin/manager
+packages/go/operator/bin/
+*.exe
+.DS_Store
+coverage/
+.nyc_output/
