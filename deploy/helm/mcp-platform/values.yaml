@@ -1,0 +1,394 @@
+# MCP Platform Helm Chart Values
+# Default configuration for deploying the full MCP platform
+
+global:
+  # Image registry
+  imageRegistry: "ghcr.io/mcp"
+  imagePullSecrets: []
+
+  # Default resource limits
+  defaultResources:
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+
+  # Service mesh
+  serviceMesh:
+    enabled: false
+    provider: "istio" # istio, linkerd, cilium
+
+  # Multi-tenancy
+  multiTenancy:
+    enabled: true
+    defaultQuota:
+      requestsPerMinute: 1000
+      concurrentConnections: 100
+
+# Control Plane Components
+controlPlane:
+  enabled: true
+
+  # Registry Service
+  registry:
+    enabled: true
+    replicas: 3
+    image: "registry:v0.1.0"
+    resources:
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+    persistence:
+      enabled: true
+      size: "10Gi"
+      storageClass: ""
+    config:
+      backend: "etcd"
+      etcd:
+        endpoints: ["etcd:2379"]
+      healthCheck:
+        enabled: true
+        interval: 30s
+        timeout: 5s
+        threshold: 3
+
+  # Auth Service
+  auth:
+    enabled: true
+    replicas: 2
+    image: "auth:v0.1.0"
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "1Gi"
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+    config:
+      providers:
+        - type: "oidc"
+          name: "default"
+          config:
+            issuer: "https://auth.example.com"
+            clientId: "mcp-platform"
+            clientSecretRef: "auth-oidc-secret"
+        - type: "apikey"
+          name: "api-keys"
+    rbac:
+      enabled: true
+      policies: []
+
+  # Config Service
+  config:
+    enabled: true
+    replicas: 2
+    image: "config:v0.1.0"
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "1Gi"
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+    config:
+      backend: "etcd"
+      encryption:
+        enabled: true
+        keyRef: "config-encryption-key"
+
+  # Gateway/Ingress
+  gateway:
+    enabled: true
+    replicas: 3
+    image: "gateway:v0.1.0"
+    resources:
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+    service:
+      type: LoadBalancer
+      ports:
+        http: 80
+        https: 443
+        grpc: 9000
+    tls:
+      enabled: true
+      secretName: "mcp-gateway-tls"
+
+# MCP Servers (Example deployments)
+servers:
+  # Ecommerce Catalog Server
+  ecommerce-catalog:
+    enabled: true
+    replicas: 3
+    image: "myorg/ecommerce-catalog:v1.2.0"
+    transport:
+      type: "websocket"
+      port: 3000
+    capabilities:
+      tools:
+        listChanged: true
+      resources:
+        subscribe: true
+      prompts:
+        listChanged: true
+    resources:
+      limits:
+        cpu: "2000m"
+        memory: "4Gi"
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 20
+      targetCPUUtilization: 70
+    multiTenancy:
+      enabled: true
+      isolation: "namespace"
+      quotas:
+        requestsPerMinute: 1000
+        concurrentConnections: 100
+    env:
+      - name: "DATABASE_URL"
+        valueFrom:
+          secretKeyRef:
+            name: "ecommerce-secrets"
+            key: "database-url"
+    secrets:
+      - name: "ecommerce-secrets"
+        mountPath: "/secrets"
+
+  # Ride-sharing Dispatch Server
+  ride-sharing-dispatch:
+    enabled: true
+    replicas: 5
+    image: "myorg/ride-sharing-dispatch:v2.1.0"
+    transport:
+      type: "grpc"
+      port: 9000
+    capabilities:
+      tools:
+        listChanged: true
+      resources:
+        subscribe: true
+    resources:
+      limits:
+        cpu: "4000m"
+        memory: "8Gi"
+      requests:
+        cpu: "1000m"
+        memory: "2Gi"
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 50
+      targetCPUUtilization: 60
+
+  # Analytics Engine Server
+  analytics-engine:
+    enabled: true
+    replicas: 2
+    image: "myorg/analytics-engine:v3.0.0"
+    transport:
+      type: "http-sse"
+      port: 8080
+    capabilities:
+      tools:
+        listChanged: true
+      resources:
+        subscribe: true
+        listChanged: true
+      prompts:
+        listChanged: true
+    resources:
+      limits:
+        cpu: "4000m"
+        memory: "16Gi"
+      requests:
+        cpu: "1000m"
+        memory: "4Gi"
+    autoscaling:
+      enabled: true
+      minReplicas: 1
+      maxReplicas: 10
+      targetCPUUtilization: 75
+
+# Observability Stack
+observability:
+  enabled: true
+
+  # OpenTelemetry Collector
+  otelCollector:
+    enabled: true
+    image: "otel/opentelemetry-collector:0.95.0"
+    config:
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+            http:
+        prometheus:
+          config:
+            scrape_configs:
+              - job_name: 'mcp-servers'
+                kubernetes_sd_configs:
+                  - role: pod
+      processors:
+        batch:
+        memory_limiter:
+          limit_mib: 1000
+      exporters:
+        otlp:
+          endpoint: "tempo:4317"
+          tls:
+            insecure: true
+        prometheus:
+          endpoint: "0.0.0.0:9090"
+      service:
+        pipelines:
+          traces:
+            receivers: [otlp]
+            processors: [batch, memory_limiter]
+            exporters: [otlp]
+          metrics:
+            receivers: [otlp, prometheus]
+            processors: [batch, memory_limiter]
+            exporters: [prometheus]
+          logs:
+            receivers: [otlp]
+            processors: [batch, memory_limiter]
+            exporters: [otlp]
+
+  # Prometheus
+  prometheus:
+    enabled: true
+    retention: "15d"
+    storage: "50Gi"
+    resources:
+      limits:
+        cpu: "2000m"
+        memory: "4Gi"
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+
+  # Grafana
+  grafana:
+    enabled: true
+    adminPassword: "admin"
+    persistence:
+      enabled: true
+      size: "10Gi"
+    dashboards:
+      mcp-platform: true
+      mcp-servers: true
+
+  # Tempo (Traces)
+  tempo:
+    enabled: true
+    retention: "7d"
+    storage: "100Gi"
+
+  # Loki (Logs)
+  loki:
+    enabled: true
+    retention: "30d"
+    storage: "50Gi"
+
+# External Dependencies
+dependencies:
+  # etcd for registry/config
+  etcd:
+    enabled: true
+    replicas: 3
+    persistence:
+      enabled: true
+      size: "10Gi"
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "1Gi"
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+
+  # Redis for caching/sessions
+  redis:
+    enabled: true
+    cluster:
+      enabled: false
+    persistence:
+      enabled: true
+      size: "10Gi"
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "2Gi"
+      requests:
+        cpu: "100m"
+        memory: "512Mi"
+
+  # PostgreSQL for audit logs
+  postgresql:
+    enabled: true
+    persistence:
+      enabled: true
+      size: "50Gi"
+    resources:
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+
+# Network Policies
+networkPolicies:
+  enabled: true
+  defaultDeny: true
+  allowIngress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: mcp-system
+      ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 9000
+
+# Security
+security:
+  podSecurityPolicy:
+    enabled: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+  seccompProfile:
+    type: "RuntimeDefault"
+
+# Backup & Disaster Recovery
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention: "30d"
+  storage:
+    s3:
+      bucket: "mcp-backups"
+      region: "us-east-1"
+    credentialsSecret: "backup-credentials"

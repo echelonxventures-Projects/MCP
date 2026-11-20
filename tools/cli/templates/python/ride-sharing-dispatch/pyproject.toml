@@ -1,0 +1,40 @@
+[project]
+name = "{{project_name}}"
+version = "1.0.0"
+description = "Ride-Sharing Dispatch MCP Server with driver matching, routing, and tracking"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp-server>=0.1.0",
+    "mcp-types>=0.1.0",
+    "mcp-registry>=0.1.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"

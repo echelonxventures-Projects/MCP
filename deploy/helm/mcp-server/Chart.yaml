@@ -1,0 +1,16 @@
+apiVersion: v2
+name: mcp-server
+description: MCP Server - Deploy any MCP-compatible server
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - mcp
+  - model-context-protocol
+  - server
+  - llm
+maintainers:
+  - name: MCP Team
+    email: team@mcp.platform
+sources:
+  - https://github.com/mcp/mcp-platform

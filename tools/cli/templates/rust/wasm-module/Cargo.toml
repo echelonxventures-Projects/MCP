@@ -1,0 +1,49 @@
+[package]
+name = "{{project_name}}"
+version = "1.0.0"
+edition = "2021"
+description = "MCP Server as WebAssembly module for browser/WASI deployment"
+license = "MIT OR Apache-2.0"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Core MCP (WASM compatible)
+mcp-types = { path = "../../../packages/rust/mcp-types", default-features = false, features = ["wasm"] }
+mcp-server = { path = "../../../packages/rust/mcp-server", default-features = false, features = ["wasm"] }
+mcp-transport = { path = "../../../packages/rust/mcp-transport", default-features = false, features = ["wasm", "wasm-streams"] }
+
+# WASM essentials
+wasm-bindgen = "0.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+
+# Async in WASM
+wasm-bindgen-futures = "0.4"
+
+# Logging
+console_error_panic_hook = "0.1"
+web-sys = { version = "0.3", features = ["console", "window", "worker", "message_event", "blob", "url"] }
+
+# Crypto for WASM
+getrandom = { version = "0.2", features = ["js"] }
+sha2 = "0.10"
+
+[features]
+default = ["browser"]
+browser = ["mcp-transport/wasm-streams", "web-sys/window", "web-sys/worker"]
+wasi = ["mcp-transport/wasi-stdio"]
+
+[profile.release]
+lto = true
+opt-level = "z"
+panic = "abort"
+
+[workspace]
+members = [
+    "../../../packages/rust/mcp-types",
+    "../../../packages/rust/mcp-server",
+    "../../../packages/rust/mcp-transport",
+]

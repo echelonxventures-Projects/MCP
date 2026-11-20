@@ -1,0 +1,62 @@
+[package]
+name = "{{project_name}}"
+version = "1.0.0"
+edition = "2021"
+description = "Embedded MCP server for resource-constrained devices (no_std compatible)"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+# Core MCP types (no_std compatible subset)
+mcp-types = { path = "../../../packages/rust/mcp-types", default-features = false, features = ["no_std"] }
+mcp-server = { path = "../../../packages/rust/mcp-server", default-features = false, features = ["no_std", "embedded"] }
+mcp-transport = { path = "../../../packages/rust/mcp-transport", default-features = false, features = ["no_std", "serial", "ble"] }
+
+# Embedded essentials
+heapless = { version = "0.8", features = ["alloc"] }  # Static allocation
+postcard = "1.0"  # Binary serialization
+defmt = "0.3"  # Logging
+defmt-rtt = "0.3"  # RTT transport for logging
+
+# Hardware abstraction (choose your target)
+# cortex-m = "0.7"  # Cortex-M
+# esp-hal = { version = "0.22", features = ["esp32c3"] }  # ESP32
+# stm32f4xx-hal = "0.15"  # STM32F4
+
+# Async runtime for embedded
+embassy-executor = { version = "0.7", features = ["defmt"] }
+embassy-time = "0.7"
+embassy-sync = "0.7"
+
+# Optional: Bluetooth LE
+# embassy-nrf = { version = "0.4", features = ["ble", "defmt"] }  # nRF52
+
+[features]
+default = ["std"]
+std = [
+    "mcp-types/std",
+    "mcp-server/std",
+    "mcp-transport/std",
+    "heapless/std",
+]
+embedded = []  # no_std
+
+# Transport features
+serial = ["mcp-transport/serial"]
+ble = ["mcp-transport/ble"]
+usb = ["mcp-transport/usb"]
+
+[profile.release]
+lto = true
+opt-level = "z"  # Optimize for size
+panic = "abort"
+codegen-units = 1
+
+[profile.dev]
+panic = "probe-run"
+
+[workspace]
+members = [
+    "../../../packages/rust/mcp-types",
+    "../../../packages/rust/mcp-server",
+    "../../../packages/rust/mcp-transport",
+]

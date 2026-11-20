@@ -1,0 +1,39 @@
+{
+  "name": "@mcp/transports",
+  "version": "0.1.0",
+  "description": "MCP Transport Implementations for TypeScript",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@mcp/types": "^0.1.0"
+  },
+  "peerDependencies": {
+    "zod": ">=3.22.0"
+  },
+  "devDependencies": {
+    "@mcp/types": "^0.1.0",
+    "typescript": ">=5.0.0",
+    "vitest": ">=1.0.0",
+    "zod": ">=3.22.0",
+    "@types/node": ">=20.0.0",
+    "@types/ws": "^8.5.0"
+  },
+  "keywords": ["mcp", "model-context-protocol", "transport", "websocket", "stdio", "sse", "grpc"],
+  "license": "MIT",
+  "files": ["dist"]
+}

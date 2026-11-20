@@ -1,0 +1,27 @@
+[package]
+name = "{{project_name}}"
+version = "1.0.0"
+edition = "2021"
+description = "Basic MCP Server in Rust"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+mcp-types = { path = "../../../packages/rust/mcp-types" }
+mcp-server = { path = "../../../packages/rust/mcp-server" }
+mcp-transport = { path = "../../../packages/rust/mcp-transport" }
+
+tokio = { version = "1.35", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+chrono = { version = "0.4", features = ["serde"] }
+sha2 = "0.10"
+
+[workspace]
+members = [
+    "../../../packages/rust/mcp-types",
+    "../../../packages/rust/mcp-server",
+    "../../../packages/rust/mcp-transport",
+]

@@ -1,0 +1,36 @@
+{
+  "name": "{{projectName}}",
+  "version": "1.0.0",
+  "description": "Ride-sharing dispatch MCP server with driver matching, routing, and real-time tracking",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@mcp/server": "^0.1.0",
+    "@mcp/types": "^0.1.0",
+    "@mcp/registry": "^0.1.0",
+    "zod": "^3.22.0",
+    "ioredis": "^5.3.0",
+    "@turf/turf": "^7.0.0",
+    "socket.io": "^4.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.0",
+    "typescript": "^5.4.0",
+    "tsx": "^4.7.0",
+    "vitest": "^1.5.0",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

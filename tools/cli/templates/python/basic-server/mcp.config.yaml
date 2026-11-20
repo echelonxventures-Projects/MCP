@@ -1,0 +1,58 @@
+# MCP Server Configuration
+# {{projectName}} - {{description}}
+
+server:
+  name: "{{projectName}}"
+  version: "1.0.0"
+  language: "python"
+
+transport:
+  type: "websocket"  # Options: stdio, websocket, http-sse, grpc, custom
+  port: 3000
+  host: "0.0.0.0"
+
+capabilities:
+  tools:
+    listChanged: true
+  resources:
+    subscribe: true
+    listChanged: true
+  prompts:
+    listChanged: true
+  logging: {}
+
+development:
+  hotReload: true
+  logLevel: "debug"
+
+production:
+  replicas: 3
+  resources:
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+  autoscaling:
+    minReplicas: 2
+    maxReplicas: 20
+    targetCPUUtilization: 70
+
+registry:
+  enabled: true
+  url: "https://registry.mcp.example.com"
+  ttl: 300
+
+observability:
+  tracing:
+    enabled: true
+    exporter: "otlp"
+    endpoint: "http://localhost:4318"
+  metrics:
+    enabled: true
+    exporter: "prometheus"
+    port: 9090
+  logging:
+    level: "info"
+    format: "json"

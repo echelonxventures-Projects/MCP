@@ -1,0 +1,77 @@
+apiVersion: mcp.platform/v1alpha1
+kind: MCPServer
+metadata:
+  name: example-mcp-server
+  namespace: default
+spec:
+  replicas: 3
+  image: ghcr.io/mcp/server:v1.0.0
+  transport:
+    type: http-sse
+    port: 8080
+    host: "0.0.0.0"
+  capabilities:
+    tools:
+      listChanged: true
+    resources:
+      subscribe: true
+      listChanged: true
+    prompts:
+      listChanged: true
+    logging: {}
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+  autoscaling:
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilization: 70
+  multiTenancy:
+    enabled: true
+    isolation: namespace
+    quotas:
+      requestsPerMinute: 1000
+      concurrentConnections: 100
+  env:
+    - name: LOG_LEVEL
+      value: "info"
+    - name: MCP_CONFIG
+      value: "/etc/mcp/config.yaml"
+  secrets:
+    - name: mcp-server-secrets
+      mountPath: "/etc/mcp/secrets"
+  serviceAccount: mcp-server-sa
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /
+    hosts:
+      - host: mcp.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mcp-server-secrets
+  namespace: default
+type: Opaque
+stringData:
+  api-key: "your-api-key-here"
+  config.yaml: |
+    server:
+      port: 8080
+    auth:
+      enabled: true
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mcp-server-sa
+  namespace: default

@@ -1,0 +1,17 @@
+apiVersion: v2
+name: mcp-platform
+description: MCP Platform - Universal Model Context Protocol Platform
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - mcp
+  - model-context-protocol
+  - llm
+  - ai
+  - platform
+maintainers:
+  - name: MCP Team
+    email: team@mcp.platform
+sources:
+  - https://github.com/mcp/mcp-platform

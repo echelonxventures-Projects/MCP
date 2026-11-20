@@ -1,0 +1,61 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mcp-operator-controller-manager
+  namespace: mcp-system
+  labels:
+    app.kubernetes.io/name: mcp-operator
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+  selector:
+    matchLabels:
+      app: mcp-operator
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: mcp-operator-rules
+  namespace: mcp-system
+  labels:
+    app.kubernetes.io/name: mcp-operator
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  groups:
+    - name: mcp-operator.rules
+      rules:
+        - alert: MCPOperatorDown
+          expr: up{job="mcp-operator-controller-manager"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "MCP Operator is down"
+            description: "MCP Operator has been down for more than 1 minute."
+        - alert: MCPOperatorHighReconciliationErrors
+          expr: rate(controller_runtime_reconcile_errors_total{controller="mcpserver"}[5m]) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "MCP Operator high reconciliation error rate"
+            description: "MCP Operator reconciliation error rate is above 0.1 per second for 5 minutes."
+        - alert: MCPServerReconciliationLatencyHigh
+          expr: histogram_quantile(0.99, rate(controller_runtime_reconcile_duration_seconds_bucket{controller="mcpserver"}[5m])) > 30
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "MCP Server reconciliation latency high"
+            description: "MCP Server P99 reconciliation latency is above 30 seconds for 5 minutes."
+        - alert: MCPServerDeploymentNotReady
+          expr: kube_deployment_status_replicas_ready{deployment=~"mcp-.*"} < kube_deployment_spec_replicas{deployment=~"mcp-.*"}
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "MCP Server deployment not ready"
+            description: "MCP Server deployment {{ $labels.deployment }} has fewer ready replicas than desired."
